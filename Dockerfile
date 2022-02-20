@@ -45,6 +45,8 @@ RUN apt -qq update && apt -qq install -y --no-install-recommends \
 
 COPY requirements.txt .
 
+RUN youtube-dl -U
+
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
