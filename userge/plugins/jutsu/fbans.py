@@ -187,8 +187,23 @@ async def fban_(message: Message):
             user = user_.id
         except (PeerIdInvalid, IndexError):
             d_err = f"Failed to detect user **{user}**, fban might not work..."
-            await message.edit(d_err, del_in=7)
+            await message.edit(f"{d_err}\nType `y` to ontinue.")
             await CHANNEL.log(d_err)
+            try:
+                async with userge.conversation(message.chat.id) as conv:
+                    response = await conv.get_response(
+                        mark_read=True, filters=(filters.user([message.from_user.id]))
+                    )
+            except BaseException:
+                return await message.edit(
+                    f"`Fban terminated...\nReason: Response timeout.`"
+                )
+            if response.text == "y":
+                pass
+            else:
+                return await message.edit(
+                    f"`Fban terminated...\nReason: User didn't continue.`"
+                )
         if (
             user in Config.SUDO_USERS
             or user in Config.OWNER_ID
@@ -363,7 +378,6 @@ async def fban_p(message: Message):
         user = split_[0]
         if not user.isdigit() and not user.startswith("@"):
             user = extract_id(message.text)
-        reason = split_[1]
         try:
             user_ = await userge.get_users(user)
             user = user_.id
@@ -371,6 +385,10 @@ async def fban_p(message: Message):
             d_err = f"Failed to detect user **{user}**, fban might not work..."
             await message.edit(d_err, del_in=5)
             await CHANNEL.log(d_err)
+        try:
+            reason = split_[1]
+        except BaseException:
+            reason = "not specified"
         if (
             user in Config.SUDO_USERS
             or user in Config.OWNER_ID
@@ -551,7 +569,10 @@ async def unfban_(message: Message):
     if message.reply_to_message:
         reason = input
     else:
-        reason = input.split(" ", 1)[1]
+        try:
+            reason = input.split(" ", 1)[1]
+        except BaseException:
+            reason = "not specified, maybe they solved it out"
     PROOF_CHANNEL = FBAN_LOG_CHANNEL if FBAN_LOG_CHANNEL else Config.LOG_CHANNEL_ID
     error_msg = "Provide a User ID or reply to a User"
     if user is None:

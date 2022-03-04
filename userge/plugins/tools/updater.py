@@ -15,12 +15,6 @@ FROZEN = get_collection("FROZEN")
 UPDATE_MSG = get_collection("UPDATE_MSG")
 
 
-async def _init():
-    start = userge.uptime
-    if start == "0h, 0m, 1s":
-        await CHANNEL.log("Bot started...")
-
-
 @userge.on_cmd(
     "update",
     about={
@@ -28,7 +22,6 @@ async def _init():
         "flags": {
             "-pull": "pull updates",
             "-branch": "Default is -alpha",
-            "-pr": "Userge-Plugins repo updates",
             "-prp": "Userge-Plugins repo pull updates",
         },
         "usage": (
@@ -47,16 +40,13 @@ async def check_update(message: Message):
     if Config.HEROKU_ENV:
         await message.edit(
             "**Heroku App detected !** Updates have been disabled for Safety.\n"
-            f"To check changelog do `{Config.CMD_TRIGGER}fetchup`, and to pull updates do `{Config.CMD_TRIGGER}restart -h`."
+            f"To check changelog do `{Config.CMD_TRIGGER}fetch_up`, and to pull updates do `{Config.CMD_TRIGGER}restart -h`."
         )
         return
     flags = list(message.flags)
     pull_from_repo = False
     push_to_heroku = False
     branch = "alpha"
-    u_repo = Config.UPSTREAM_REPO
-    u_repo = u_repo.replace("/", " ")
-    git_u_n = u_repo.split()[2]
     if "pull" in flags:
         pull_from_repo = True
         flags.remove("pull")
@@ -66,9 +56,6 @@ async def check_update(message: Message):
             return
         # push_to_heroku = True
         # flags.remove("push")
-    if "pr" in flags:
-        branch = "master"
-        out = _get_updates_pr(git_u_n, branch)
     if "prp" in flags:
         await message.edit("Updating <b><u>Userge-Plugins</u></b>...", log=__name__)
         await runcmd("bash run")
@@ -149,20 +136,13 @@ def _get_updates(repo: Repo, branch: str) -> str:
     upst = Config.UPSTREAM_REPO.rstrip("/")
     out = ""
     upst = Config.UPSTREAM_REPO.rstrip("/")
+    limit_ = 100
+    start_ = 0
     for i in repo.iter_commits(f"HEAD..{Config.UPSTREAM_REMOTE}/{branch}"):
-        out += f"🔨 **#{i.count()}** : [{i.summary}]({upst}/commit/{i}) 👷 __{i.author}__\n\n"
-    return out
-
-
-def _get_updates_pr(git_u_n: str, branch: str) -> str:
-    pr_up = f"https://github.com/{git_u_n}/Userge-Plugins"
-    repo = Repo()
-    repo.remote(pr_up).fetch(branch)
-    upst = pr_up.rstrip("/")
-    out = ""
-    upst = pr_up.rstrip("/")
-    for i in repo.iter_commits(f"HEAD..{pr_up}/{branch}"):
-        out += f"🔨 **#{i.count()}** : [{i.summary}]({upst}/commit/{i}) 👷 __{i.author}__\n\n"
+        start_ += 1
+        out += f"🔨 **#{i.count()}** : [{i.summary}]({upst}/commit/{i}) 👤 __{i.author}__\n\n"
+        if start_ == limit_:
+            return out
     return out
 
 
