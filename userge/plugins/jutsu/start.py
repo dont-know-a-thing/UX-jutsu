@@ -39,6 +39,7 @@ async def _init() -> None:
             await userge.edit_message_text(chat_id=chat_, message_id=msg_, text=text_)
         except BaseException:
             pass
+        await CHANNEL.log("`### UX-jutsu restarted successfully. ###`")
         await RESTART_MESSAGE.drop()
     else:
         await CHANNEL.log("`### UX-jutsu started successfully. ###`")

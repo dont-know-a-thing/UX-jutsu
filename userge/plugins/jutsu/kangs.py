@@ -58,6 +58,8 @@ async def log_kang(message: Message):
         await SAVED_SETTINGS.update_one(
             {"_id": "LOG_KANG"}, {"$set": {"switch": True}}, upsert=True
         )
+    out_ = "ON" if Config.LOG_KANG else "OFF"
+    await message.edit(f"`Logging kang in channel is now {out_}.`")
 
 
 @userge.on_cmd(
@@ -342,7 +344,7 @@ async def resize_photo(media: str, video: bool, fast_forward: bool) -> str:
         width = info_["pixel_sizes"][0]
         height = info_["pixel_sizes"][1]
         sec = info_["duration_in_ms"]
-        s = sec / 1000
+        s = round(float(sec)) / 1000
 
         if height == width:
             height, width = 512, 512
@@ -361,10 +363,10 @@ async def resize_photo(media: str, video: bool, fast_forward: bool) -> str:
             else:
                 cmd_f = f"-filter:v scale={width}:{height}"
         else:
-            cmd_f = f"-ss 00:00:00 -to 00:00:03 -filter:v scale={width}:{height}"
+            cmd_f = f"-filter:v scale={width}:{height}"
         fps_ = float(info_["frame_rate"])
         fps_cmd = "-r 30 " if fps_ > 30 else ""
-        cmd = f"ffmpeg -i {media} {cmd_f} -an -c:v libvpx-vp9 {fps_cmd}-fs 256K {resized_video}"
+        cmd = f"ffmpeg -i {media} {cmd_f} -ss 00:00:00 -to 00:00:03 -an -c:v libvpx-vp9 {fps_cmd}-fs 256K {resized_video}"
         await runcmd(cmd)
         os.remove(media)
         return resized_video
